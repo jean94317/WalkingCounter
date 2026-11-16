@@ -15,7 +15,6 @@ class ViewController: UIViewController,UIGestureRecognizerDelegate {
     @IBOutlet weak var showLabel: UILabel!
     var nowSteps: Int = 0
     let healthStore = HKHealthStore()
-    let stepArr = [100,300,500,1000,3000,5000]
     let stepType = HKQuantityType.quantityType(
         forIdentifier: .stepCount
     )!
@@ -46,7 +45,9 @@ class ViewController: UIViewController,UIGestureRecognizerDelegate {
     }
     
     func setDatePicker(){
+        self.saveDate = Date()
         self.datepicker.maximumDate = Date()
+        self.datepicker.date = self.saveDate
     }
     
     @objc func handleTap() {
@@ -65,22 +66,23 @@ class ViewController: UIViewController,UIGestureRecognizerDelegate {
         self.sentBtn.backgroundColor = .systemGray
     }
     
+    //刷新畫面資料
     @IBAction func returnStep(_ sender: UIButton) {
         setDatePicker()
         getTodaySteps()
     }
-    
+    //隨機步數
     @IBAction func randomStep(_ sender: UIButton) {
         self.walkTextField.text = "\(Int.random(in: 1...1000))"
         self.sentBtn.backgroundColor = .systemBlue
     }
-    
+    //步數快速按鈕
     @IBAction func setStep(_ sender: UIButton) {
         let step = sender.titleLabel?.text
         self.walkTextField.text = step
         self.sentBtn.backgroundColor = .systemBlue
     }
-    
+    //選擇儲存時間
     @IBAction func setSaveDate(_ sender: UIDatePicker) {
         let date = sender.date
         self.saveDate = date
@@ -111,60 +113,56 @@ class ViewController: UIViewController,UIGestureRecognizerDelegate {
         }
         healthStore.execute(query)
         
-        //2. 依照時間排序（最新的在前面或後面）
-        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
+//        //依照時間排序（最新的在前面或後面）
+//        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
+//        
+//        let query1 = HKSampleQuery(
+//            sampleType: stepType,
+//            predicate: predicate,
+//            limit: HKObjectQueryNoLimit, //不限制筆數，或填入數字（例如 10）限制只抓前 10 筆
+//            sortDescriptors: [sortDescriptor]
+//        ) { _, samples, error in
+//            guard let samples = samples as? [HKQuantitySample], error == nil else {
+//                print("讀取步數明細失敗: \(error?.localizedDescription ?? "")")
+//                return
+//            }
+//            
+//            print("--- 取得詳細步數紀錄（共 \(samples.count) 筆）---")
+//            
+//            if samples.count > 0{
+//                var saveStartDate = Calendar.current.startOfDay(for: Date())
+//                self.saveDate = saveStartDate
+//                for num in 0..<samples.count {
+//                    let sample = samples[num]
+//                    let steps = sample.quantity.doubleValue(for: HKUnit.count())
+//                    let start = sample.startDate
+//                    let end = sample.endDate
+//                    if start > self.saveDate {
+//                        break
+//                    }else{
+//                        self.saveDate = end.addingTimeInterval(60)
+//                    }
+//                    print("步數: \(Int(steps)) 步 | 時間: \(start) ~ \(end)")
+//                }
+//            }else{
+//                let calendar = Calendar.current
+//                self.saveDate = calendar.startOfDay(for: Date())
+//            }
+//            
+//            if self.saveDate > Date() {
+//                self.saveDate = Date()
+//            }
+//            DispatchQueue.main.async {
+//                self.datepicker.date = self.saveDate
+//            }
+//        }
         
-        // 3. 建立樣本查詢
-        let query1 = HKSampleQuery(
-            sampleType: stepType,
-            predicate: predicate,
-            limit: HKObjectQueryNoLimit, //不限制筆數，或填入數字（例如 10）限制只抓前 10 筆
-            sortDescriptors: [sortDescriptor]
-        ) { _, samples, error in
-            guard let samples = samples as? [HKQuantitySample], error == nil else {
-                print("讀取步數明細失敗: \(error?.localizedDescription ?? "")")
-                return
-            }
-            
-            print("--- 取得詳細步數紀錄（共 \(samples.count) 筆）---")
-            
-            if samples.count > 0{
-                var saveStartDate = Calendar.current.startOfDay(for: Date())
-                self.saveDate = saveStartDate
-                for num in 0..<samples.count {
-                    let sample = samples[num]
-                    let steps = sample.quantity.doubleValue(for: HKUnit.count())
-                    let start = sample.startDate
-                    let end = sample.endDate
-                    if start > self.saveDate {
-                        break
-                    }else{
-                        self.saveDate = end.addingTimeInterval(60)
-                    }
-                    print("步數: \(Int(steps)) 步 | 時間: \(start) ~ \(end)")
-                }
-            }else{
-                let calendar = Calendar.current
-                self.saveDate = calendar.startOfDay(for: Date())
-            }
-            
-            if self.saveDate > Date() {
-                self.saveDate = Date()
-            }
-            DispatchQueue.main.async {
-                self.datepicker.date = self.saveDate
-//                self.datepicker.minimumDate = self.saveDate
-            }
-        }
-        
-        healthStore.execute(query1)
+//        healthStore.execute(query1)
     }
     
     //增加步數
     func addSteps(_ steps: Int){
         let quantity = HKQuantity(unit: HKUnit.count(), doubleValue: Double(steps))
-        let calendar = Calendar.current
-        var startDate = calendar.startOfDay(for: Date())
         let sample = HKQuantitySample(type: stepType,
                                       quantity: quantity,
                                       start: self.saveDate,
